@@ -1,6 +1,5 @@
 import 'dotenv/config'
 
-import bodyParser from 'body-parser'
 import compression from 'compression'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
@@ -10,6 +9,7 @@ import Api from './api'
 import Admin from './api/admin'
 import Auth from './api/auth'
 import ConfigRouter from './api/config'
+import Discord from './api/discord'
 import Zone from './api/zone'
 import initServer from './initServer'
 import checkAdmin from './middleware/checkAdmin'
@@ -29,7 +29,7 @@ const app = express()
 
   app.use(cors(config.cors))
 
-  app.use(bodyParser.json())
+  app.use(express.json())
   app.use(cookieParser())
   app.use(compression())
 
@@ -45,6 +45,7 @@ const app = express()
 
   // Authed routes
   app.use('/api/admin', checkAdmin, Admin)
+  app.use('/api/discord', checkAdmin, Discord)
   app.use('/api', verifyUser, Api)
 
   app.listen(config.port, () => logger.info(`Started: ${config.port}`))

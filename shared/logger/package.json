@@ -1,6 +1,6 @@
 {
   "name": "@portaler/logger",
-  "version": "0.0.38",
+  "version": "0.0.57",
   "description": "Logging service for NodeJS",
   "main": "out/index.js",
   "types": "out/index.d.ts",

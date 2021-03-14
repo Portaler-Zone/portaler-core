@@ -2,7 +2,7 @@ import { QueryResult } from 'pg'
 
 export type DBQuery = (
   query: string,
-  params: (string | number | number[] | Date)[]
+  params: (string | number | number[] | Date | boolean)[]
 ) => Promise<QueryResult>
 
 export default class BaseModel {

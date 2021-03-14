@@ -1,4 +1,3 @@
-import { GuildMember } from 'discord.js'
 import { QueryResult } from 'pg'
 
 import { DiscordMe, DiscordMeGuild } from '@portaler/types'
@@ -9,6 +8,13 @@ import ServerModel, { IServerModel } from './Server'
 interface ServerRoleId {
   serverId: string
   roleId: string
+  isReadOnly: boolean
+}
+
+export interface DiscordUser {
+  id: string
+  username: string
+  discriminator: string
 }
 
 export interface IUserModel {
@@ -18,6 +24,7 @@ export interface IUserModel {
   serverAccess?: ServerRoleId[]
   discordRefresh?: string | null
   createdOn: Date
+  isBanned: boolean
 }
 
 export enum UserAction {
@@ -33,12 +40,12 @@ export default class UserModel extends BaseModel {
   }
 
   createUser = async (
-    member: GuildMember,
+    member: DiscordUser,
     serverId: number,
     roles: number[]
   ) => {
     try {
-      const user = await this.getUserByDiscord(member.user.id)
+      const user = await this.getUserByDiscord(member.id)
 
       let userId = user ? user.id : null
 
@@ -48,7 +55,7 @@ export default class UserModel extends BaseModel {
           INSERT INTO users(discord_id, discord_name, discord_discriminator)
           VALUES ($1, $2, $3) RETURNING id;
           `,
-          [member.user.id, member.user.username, member.user.discriminator]
+          [member.id, member.username, member.discriminator]
         )
 
         userId = dbResUser.rows[0].id
@@ -208,6 +215,7 @@ export default class UserModel extends BaseModel {
         discordName: `${fRow.discord_name}#${fRow.discriminator}`,
         discordRefresh: fRow.refresh,
         createdOn: fRow.created_on,
+        isBanned: fRow.is_banned,
       }
 
       return user
@@ -228,15 +236,18 @@ export default class UserModel extends BaseModel {
         u.discord_name AS discord_name,
         u.discord_discriminator AS discriminator,
         u.discord_refresh AS refresh,
+        u.is_banned as is_banned,
         u.created_on AS created_on,
         sr.server_id AS server_id,
-        sr.discord_role_id AS role_id
+        sr.discord_role_id AS role_id,
+        sr.is_read_only AS is_read_only
       FROM users AS u
       JOIN user_servers AS us ON us.user_id = u.id
-      JOIN server_roles AS sr ON sr.id = us.server_id
-      JOIN user_roles AS ur ON ur.user_id = u.id AND ur.role_id = sr.id
-      WHERE ${typeof userId === 'string' ? 'u.discord_id' : 'u.id'} = $1
-        AND sr.server_id = $2
+      LEFT JOIN user_roles AS ur ON ur.user_id = u.id
+      LEFT JOIN server_roles AS sr ON sr.server_id = us.server_id AND ur.role_id = sr.id
+      WHERE ${
+        typeof userId === 'string' ? 'u.discord_id' : 'u.id'
+      } = $1 AND us.server_id = $2
     `,
         [userId, serverId]
       )
@@ -256,7 +267,9 @@ export default class UserModel extends BaseModel {
         serverAccess: dbResUser.rows.map((r) => ({
           serverId: r.server_id,
           roleId: r.role_id,
+          isReadOnly: r.is_read_only,
         })),
+        isBanned: fRow.is_banned,
       }
 
       return user

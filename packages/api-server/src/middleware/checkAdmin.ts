@@ -10,6 +10,7 @@ const checkAdmin = (req: Request, res: Response, next: NextFunction) => {
   const token = req.headers.authorization.split(' ')[1]
 
   if (token !== process.env.ADMIN_KEY) {
+    logger.emerg('Attempted admin endpoint', { headers: req.headers })
     return res.status(403)
   }
 

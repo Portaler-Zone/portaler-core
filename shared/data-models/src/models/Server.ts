@@ -4,6 +4,7 @@ interface ServerRoles {
   id: number
   discordRoleId: string
   lastUpdated: string
+  isReadOnly: boolean
 }
 
 export interface IServerModel {
@@ -34,10 +35,14 @@ export default class ServerModel extends BaseModel {
     return dbResServer.rows[0].id
   }
 
-  createRole = async (serverId: number, roleId: string): Promise<number> => {
+  createRole = async (
+    serverId: number,
+    roleId: string,
+    readOnly: boolean = false
+  ): Promise<number> => {
     const dbResRole = await this.query(
-      `INSERT INTO server_roles(server_id, discord_role_id) VALUES($1, $2) RETURNING id`,
-      [serverId, roleId]
+      `INSERT INTO server_roles(server_id, discord_role_id, is_read_only) VALUES($1, $2, $3) RETURNING id`,
+      [serverId, roleId, readOnly]
     )
 
     return dbResRole.rows[0].id
@@ -65,7 +70,8 @@ export default class ServerModel extends BaseModel {
         s.discord_url AS discord_url,
         sr.id AS role_id,
         sr.discord_role_id AS discord_role_id,
-        sr.last_updated AS role_last_updated
+        sr.last_updated AS role_last_updated,
+        sr.is_read_only AS role_readonly
       FROM servers AS s
       LEFT JOIN server_roles AS sr ON sr.server_id = s.id
       WHERE ${typeof id === 'number' ? 's.id' : 's.discord_id'} = $1
@@ -91,6 +97,7 @@ export default class ServerModel extends BaseModel {
           id: r.role_id,
           discordRoleId: r.discord_role_id,
           lastUpdated: r.role_last_updated,
+          isReadOnly: r.role_readonly,
         })),
       }
 

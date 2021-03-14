@@ -27,7 +27,12 @@ export default class RedisConnector {
     this.delAsync = promisify(this.client.del).bind(this.client)
   }
 
-  setUser = async (token: string, userId: number, serverId: number) => {
+  setUser = async (
+    token: string,
+    userId: number,
+    serverId: number,
+    isReadOnly: boolean
+  ) => {
     const hasUser = await this.getUser(`${userId}:${serverId}`)
 
     if (hasUser) {
@@ -35,7 +40,7 @@ export default class RedisConnector {
     }
 
     return await Promise.all([
-      this.setAsync(token, `${userId}:${serverId}`),
+      this.setAsync(token, `${userId}:${serverId}:${isReadOnly}`),
       this.setAsync(`${userId}:${serverId}`, token),
     ])
   }
@@ -56,11 +61,22 @@ export default class RedisConnector {
       userIds.map((uid) => this.getToken(uid, serverId))
     )
 
-    const delTokens = tokenList.map((t) => this.delAsync(t))
-    const delUsers = userIds.map((uid) => this.delAsync(`${uid}:${serverId}`))
+    const promiseList = []
+
+    if (tokenList) {
+      const delTokens = tokenList.map((t) => this.delAsync(t))
+      const delUsers = userIds.map((uid) => this.delAsync(`${uid}:${serverId}`))
+
+      promiseList.push([...delTokens, ...delUsers])
+    }
+
+    const subdomain = this.getAsync(`server:${serverId}`)
     const delServer = this.delAsync(`server:${serverId}`)
 
-    await Promise.all([...delTokens, ...delUsers, delServer])
+    promiseList.push(delServer)
+    promiseList.push(this.delAsync(`server:${subdomain}`))
+
+    await Promise.all(promiseList)
   }
 
   setZones = async (zones: Zone[]) =>

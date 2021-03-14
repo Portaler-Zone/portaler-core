@@ -7,10 +7,10 @@ import RedisConnector from './RedisConnector'
 
 const getDatabases = async (
   dbConfig: PoolConfig,
-  redisConfig: ClientOpts
+  redisConfig?: ClientOpts
 ): Promise<{
   db: DatabaseConnector
-  redis: RedisConnector
+  redis?: RedisConnector
 }> =>
   await retry(
     async () => {
@@ -22,14 +22,18 @@ const getDatabases = async (
         throw new Error('Error connecting to db')
       }
 
-      const redis = new RedisConnector(redisConfig)
+      if (redisConfig) {
+        const redis = new RedisConnector(redisConfig)
 
-      if (redis) {
-        console.log('Connected to Db & Redis')
-        return { db, redis }
-      } else {
-        throw new Error('Error connecting to Redis')
+        if (redis) {
+          console.log('Connected to Db & Redis')
+          return { db, redis }
+        } else {
+          throw new Error('Error connecting to Redis')
+        }
       }
+
+      return { db }
     },
     {
       retries: 100,
@@ -43,6 +47,6 @@ const getDatabases = async (
 
 export { DatabaseConnector, RedisConnector }
 export { IServerModel } from './models/Server'
-export { IUserModel } from './models/User'
+export { IUserModel, DiscordUser } from './models/User'
 
 export default getDatabases

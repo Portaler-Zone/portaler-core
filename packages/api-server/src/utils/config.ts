@@ -16,6 +16,7 @@ interface IConfig {
     client: string
     secret: string
     role: string
+    bot: string
   }
   db: DBConfig
   redis: RedisConfig
@@ -57,6 +58,7 @@ const config: IConfig = {
     client: process.env.DISCORD_CLIENT_TOKEN!,
     secret: process.env.DISCORD_SECRET_TOKEN!,
     role: process.env.DISCORD_ROLE!,
+    bot: process.env.DISCORD_BOT_TOKEN!,
   },
   db: {
     host: process.env.DB_HOST!,

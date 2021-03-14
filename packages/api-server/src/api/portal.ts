@@ -31,6 +31,9 @@ const getExpireTime = (size: number, hours: number, minutes: number) => {
     .toJSDate()
 }
 
+/**
+ * GET /api/portal/
+ */
 router.get('/', async (req, res) => {
   try {
     const dbPortals: IPortalModel[] = await getServerPortals(req.serverId)
@@ -65,10 +68,15 @@ router.get('/', async (req, res) => {
   }
 })
 
+/**
+ * POST /api/portal/
+ */
 router.post('/', async (req, res) => {
   try {
     if (req.userId === 0) {
-      return res.send(401)
+      return res.sendStatus(401)
+    } else if (!req.canWrite) {
+      return res.sendStatus(403)
     }
 
     const body: PortalPayload = req.body
@@ -149,10 +157,15 @@ router.post('/', async (req, res) => {
   }
 })
 
+/**
+ * DELETE /api/portal/
+ */
 router.delete('/', async (req, res) => {
   try {
     if (req.userId === 0) {
       return res.sendStatus(401)
+    } else if (!req.canWrite) {
+      return res.sendStatus(403)
     }
 
     const portalIds = req.body.portals

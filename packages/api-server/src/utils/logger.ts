@@ -4,11 +4,9 @@ import { db } from './db'
 
 const logger = createLogger(process.env.SERVICE ?? 'api-server')
 
-logger.on('data', (info: WinstonLog) => {
+logger.on('data', async (info: WinstonLog) => {
   try {
-    setImmediate(() => {
-      db.Logs.winstonLog(info)
-    })
+    await db.Logs.winstonLog(info)
   } catch (err) {
     console.error(err)
   }

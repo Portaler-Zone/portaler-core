@@ -15,7 +15,7 @@ const getDb = async () => {
   )
 
   db = tmpDb
-  redis = tmpRedis
+  redis = tmpRedis!
 }
 
 export { db, redis }
